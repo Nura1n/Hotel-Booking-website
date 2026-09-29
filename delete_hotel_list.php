@@ -6,7 +6,7 @@ $raw_id = $_POST['id'] ?? $_GET['id'] ?? null;
 
 // Semak jika ID wujud dan bukan rentetan kosong
 if ($raw_id !== null && $raw_id !== '') {
-    
+
     // Tukar input kepada nombor bulat (integer) secara paksa untuk keselamatan
     $id = intval($raw_id);
 
@@ -34,4 +34,3 @@ if ($raw_id !== null && $raw_id !== '') {
 // Lencongan kembali ke halaman senarai hotel
 header("Location: hotel_list.php");
 exit();
-?>
