@@ -6,7 +6,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
     exit();
 }
 
-$id = $_GET['id'];
+$id = intval($_GET['id']);
 
 if (isset($_POST['update'])) {
 
@@ -17,25 +17,30 @@ if (isset($_POST['update'])) {
     $star_rating  = $_POST['star_rating'];
     $price_range  = $_POST['price_range'];
 
-    $sql = "UPDATE hotel_list SET 
-            Hotel_Name = '$hotel_name', 
-            Hotel_Email = '$hotel_email', 
-            Address = '$address', 
-            Type_Of_Room = '$type_of_room', 
-            Star_Rating = '$star_rating', 
-            Price_Range = '$price_range' 
-            WHERE id = $id";
+    $stmt = $conn->prepare("UPDATE hotel_list SET 
+                            Hotel_Name = ?, 
+                            Hotel_Email = ?, 
+                            Address = ?, 
+                            Type_Of_Room = ?, 
+                            Star_Rating = ?, 
+                            Price_Range = ? 
+                            WHERE id = ?");
 
-    if ($conn->query($sql) === TRUE) {
+    $stmt->bind_param("ssssssi", $hotel_name, $hotel_email, $address, $type_of_room, $star_rating, $price_range, $id);
+
+    if ($stmt->execute()) {
         header("Location: hotel_list.php");
         exit();
     } else {
-        echo "Error SQL Update: " . $conn->error;
+        echo "<script>alert('Error SQL Update: " . addslashes($stmt->error) . "');</script>";
     }
 }
 
-// 3. Ambil data hotel dari database berdasarkan ID
-$result = $conn->query("SELECT * FROM hotel_list WHERE id = $id");
+// Ambil data hotel dari database berdasarkan ID
+$stmt_fetch = $conn->prepare("SELECT * FROM hotel_list WHERE id = ?");
+$stmt_fetch->bind_param("i", $id);
+$stmt_fetch->execute();
+$result = $stmt_fetch->get_result();
 
 if (!$result || $result->num_rows == 0) {
     echo "Data hotel tidak dijumpai!";
@@ -51,6 +56,7 @@ $r = array_change_key_case($row, CASE_LOWER);
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Hotel</title>
 
     <style>
@@ -76,27 +82,34 @@ $r = array_change_key_case($row, CASE_LOWER);
             padding: 35px;
             border-radius: 18px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        h2 {
-            text-align: center;
-            color: #1e293b;
-            margin-top: 0;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
-
-        form {
             color: #334155;
             font-size: 14px;
             font-weight: 600;
         }
 
-        input[type="text"] {
+        h2 {
+            text-align: center;
+            color: #8d0811;
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"] {
             width: 100%;
             padding: 12px 14px;
-            margin-top: 7px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 14px;
@@ -106,13 +119,15 @@ $r = array_change_key_case($row, CASE_LOWER);
             transition: 0.2s;
         }
 
-        input[type="text"]:focus {
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="number"]:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
         }
 
         input[name="id"] {
-            background-color: #f1f5f9;
+            background-color: #e2e8f0;
             color: #64748b;
             cursor: not-allowed;
         }
@@ -120,7 +135,7 @@ $r = array_change_key_case($row, CASE_LOWER);
         input[type="submit"] {
             width: 100%;
             padding: 13px;
-            margin-top: 5px;
+            margin-top: 15px;
             border: none;
             border-radius: 9px;
             background: #8d0811;
@@ -133,7 +148,7 @@ $r = array_change_key_case($row, CASE_LOWER);
 
         input[type="submit"]:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 8px 20px rgba(141, 8, 17, 0.35);
         }
 
         input[type="submit"]:active {
@@ -161,50 +176,38 @@ $r = array_change_key_case($row, CASE_LOWER);
 
     <form method="post">
 
-        Hotel_Name:
-        <input type="text" name="hotel_name"
-            value="<?php echo htmlspecialchars($r['hotel_name'] ?? $r['hotel name'] ?? ''); ?>"
-            required>
+        <h2>Edit Hotel</h2>
 
-        <br>
-
-        Hotel_Email:
-        <input type="text" name="hotel_email"
-            value="<?php echo htmlspecialchars($r['hotel_email'] ?? $r['hotel email'] ?? $r['email'] ?? ''); ?>"
-            required>
-
-        <br>
-
-        Address:
-        <input type="text" name="address"
-            value="<?php echo htmlspecialchars($r['address'] ?? ''); ?>">
-
-        <br>
-
-        Type_Of_Room:
-        <input type="text" name="type_of_room"
-            value="<?php echo htmlspecialchars($r['type_of_room'] ?? $r['type of room'] ?? ''); ?>">
-
-        <br>
-
-        Star_Rating:
-        <input type="text" name="star_rating"
-            value="<?php echo htmlspecialchars($r['star_rating'] ?? $r['star rating'] ?? ''); ?>">
-
-        <br>
-
-        Price_Range:
-        <input type="text" name="price_range"
-            value="<?php echo htmlspecialchars($r['price_range'] ?? $r['price range'] ?? ''); ?>">
-
-        <br>
-
-        id:
+        <label>ID:</label>
         <input type="text" name="id"
             value="<?php echo htmlspecialchars($r['id'] ?? ''); ?>"
             readonly>
 
-        <br>
+        <label>Hotel Name:</label>
+        <input type="text" name="hotel_name"
+            value="<?php echo htmlspecialchars($r['hotel_name'] ?? $r['hotel name'] ?? ''); ?>"
+            required>
+
+        <label>Hotel Email:</label>
+        <input type="email" name="hotel_email"
+            value="<?php echo htmlspecialchars($r['hotel_email'] ?? $r['hotel email'] ?? $r['email'] ?? ''); ?>"
+            required>
+
+        <label>Address:</label>
+        <input type="text" name="address"
+            value="<?php echo htmlspecialchars($r['address'] ?? ''); ?>" required>
+
+        <label>Type Of Room:</label>
+        <input type="text" name="type_of_room"
+            value="<?php echo htmlspecialchars($r['type_of_room'] ?? $r['type of room'] ?? ''); ?>" required>
+
+        <label>Star Rating:</label>
+        <input type="number" name="star_rating" min="1" max="5"
+            value="<?php echo htmlspecialchars($r['star_rating'] ?? $r['star rating'] ?? ''); ?>" required>
+
+        <label>Price Range:</label>
+        <input type="text" name="price_range"
+            value="<?php echo htmlspecialchars($r['price_range'] ?? $r['price range'] ?? ''); ?>" required>
 
         <input type="submit" name="update" value="Update Hotel">
 
